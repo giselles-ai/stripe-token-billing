@@ -43,7 +43,6 @@ STRIPE_METER_ID=mtr_...
 | `STRIPE_SECRET_KEY` | Stripe API key (`sk_test_...` or `sk_live_...`) |
 | `STRIPE_RATE_CARD_ID` | Existing Rate Card ID (`rcd_...`) |
 | `STRIPE_METER_ID` | Existing Meter ID (`mtr_...`) |
-| `STRIPE_PRICING_PLAN_ID` | Existing Pricing Plan ID (`bpp_...`) |
 
 ## Usage
 
@@ -91,7 +90,6 @@ npx stripe-token-billing --env sandbox list
 | `--output-price` | Price per million output tokens (USD) | Required |
 | `--markup` | Markup percentage | `10` |
 | `--dry-run` | Preview without making API calls | `false` |
-| `--force` | Add even if model already exists on the Rate Card | `false` |
 
 ## Development
 
