@@ -1,0 +1,36 @@
+{
+	"name": "stripe-token-billing",
+	"version": "1.0.0",
+	"description": "CLI tool for managing Stripe Rate Card models for token-based billing",
+	"type": "module",
+	"bin": {
+		"stripe-token-billing": "./dist/index.js"
+	},
+	"scripts": {
+		"dev": "tsx src/index.ts",
+		"build": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"format": "biome check --write ."
+	},
+	"keywords": ["stripe", "billing", "token", "llm"],
+	"author": "",
+	"license": "MIT",
+	"packageManager": "pnpm@10.32.1",
+	"pnpm": {
+		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+	},
+	"dependencies": {
+		"commander": "^14.0.0",
+		"dotenv": "^17.3.1",
+		"picocolors": "^1.1.1",
+		"stripe": "20.2.0-alpha.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^25.5.0",
+		"tsx": "^4.21.0",
+		"typescript": "^6.0.2",
+		"vitest": "^4.1.2"
+	}
+}
