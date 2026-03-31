@@ -190,33 +190,6 @@ export async function runAdd(options: AddOptions): Promise<void> {
 			live_version: "latest",
 		});
 		console.log(pc.green("  ✓ Rate Card updated to latest version"));
-
-		const pricingPlanId = process.env.STRIPE_PRICING_PLAN_ID;
-		if (pricingPlanId) {
-			const rateCard = await stripe.v2.billing.rateCards.retrieve(rateCardId);
-			const { data: components } =
-				await stripe.v2.billing.pricingPlans.components.list(pricingPlanId);
-			const existing = components.find(
-				(c) => c.type === "rate_card" && c.rate_card?.id === rateCardId,
-			);
-			if (existing) {
-				await stripe.v2.billing.pricingPlans.components.del(
-					pricingPlanId,
-					existing.id,
-				);
-			}
-			await stripe.v2.billing.pricingPlans.components.create(pricingPlanId, {
-				type: "rate_card",
-				rate_card: {
-					id: rateCardId,
-					version: rateCard.latest_version,
-				},
-			});
-			await stripe.v2.billing.pricingPlans.update(pricingPlanId, {
-				live_version: "latest",
-			});
-			console.log(pc.green("  ✓ Pricing Plan updated to latest version"));
-		}
 	} catch (error) {
 		handleStripeError(error);
 	}
