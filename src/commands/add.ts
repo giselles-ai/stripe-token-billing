@@ -21,6 +21,7 @@ export interface AddOptions {
 	outputPrice: number;
 	markup: number;
 	dryRun: boolean;
+	force: boolean;
 }
 
 interface TokenConfig {
@@ -97,37 +98,35 @@ function printDryRun(options: AddOptions) {
 	}
 }
 
-async function checkDuplicateModel(
+interface DuplicateRate {
+	rateId: string;
+	displayName: string;
+}
+
+async function findDuplicateRates(
 	stripe: Stripe,
 	rateCardId: string,
 	model: string,
-): Promise<void> {
+): Promise<DuplicateRate[]> {
 	const inputName = buildDisplayName(model, "input");
 	const outputName = buildDisplayName(model, "output");
 
 	const rates = await fetchRateCardRates(stripe, rateCardId);
-	const duplicates = rates.filter((rate) => {
-		const name = rate.metered_item?.display_name;
-		return name === inputName || name === outputName;
-	});
 
-	if (duplicates.length > 0) {
-		console.error(
-			pc.red(
-				`\nError: Model "${model}" already exists on this Rate Card:\n`,
-			),
-		);
-		for (const dup of duplicates) {
-			console.error(
-				`  - ${dup.metered_item?.display_name ?? dup.metered_item?.id ?? "-"}`,
-			);
-		}
-		process.exit(1);
-	}
+	return rates
+		.filter((rate) => {
+			const name = rate.metered_item?.display_name;
+			return name === inputName || name === outputName;
+		})
+		.map((rate) => ({
+			rateId: rate.id,
+			displayName:
+				rate.metered_item?.display_name ?? rate.metered_item?.id ?? "-",
+		}));
 }
 
 export async function runAdd(options: AddOptions): Promise<void> {
-	const { model, inputPrice, outputPrice, markup, dryRun } = options;
+	const { model, inputPrice, outputPrice, markup, dryRun, force } = options;
 
 	if (dryRun) {
 		printDryRun(options);
@@ -141,7 +140,26 @@ export async function runAdd(options: AddOptions): Promise<void> {
 	const stripe = createStripeClient(apiKey);
 
 	try {
-		await checkDuplicateModel(stripe, rateCardId, model);
+		const duplicates = await findDuplicateRates(stripe, rateCardId, model);
+		if (duplicates.length > 0 && !force) {
+			console.error(
+				pc.red(`\nError: Model "${model}" already exists on this Rate Card:\n`),
+			);
+			for (const dup of duplicates) {
+				console.error(`  - ${dup.displayName}`);
+			}
+			console.error(pc.dim("\nUse --force to replace existing rates."));
+			process.exit(1);
+		}
+
+		if (duplicates.length > 0 && force) {
+			console.log(pc.yellow(`\nReplacing existing rates for "${model}"...\n`));
+			for (const dup of duplicates) {
+				await stripe.v2.billing.rateCards.rates.del(rateCardId, dup.rateId);
+				console.log(pc.yellow(`  ✕ Removed: ${dup.displayName}`));
+			}
+			console.log("");
+		}
 	} catch (error) {
 		handleStripeError(error);
 	}
@@ -172,6 +190,33 @@ export async function runAdd(options: AddOptions): Promise<void> {
 			live_version: "latest",
 		});
 		console.log(pc.green("  ✓ Rate Card updated to latest version"));
+
+		const pricingPlanId = process.env.STRIPE_PRICING_PLAN_ID;
+		if (pricingPlanId) {
+			const rateCard = await stripe.v2.billing.rateCards.retrieve(rateCardId);
+			const { data: components } =
+				await stripe.v2.billing.pricingPlans.components.list(pricingPlanId);
+			const existing = components.find(
+				(c) => c.type === "rate_card" && c.rate_card?.id === rateCardId,
+			);
+			if (existing) {
+				await stripe.v2.billing.pricingPlans.components.del(
+					pricingPlanId,
+					existing.id,
+				);
+			}
+			await stripe.v2.billing.pricingPlans.components.create(pricingPlanId, {
+				type: "rate_card",
+				rate_card: {
+					id: rateCardId,
+					version: rateCard.latest_version,
+				},
+			});
+			await stripe.v2.billing.pricingPlans.update(pricingPlanId, {
+				live_version: "latest",
+			});
+			console.log(pc.green("  ✓ Pricing Plan updated to latest version"));
+		}
 	} catch (error) {
 		handleStripeError(error);
 	}

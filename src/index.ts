@@ -65,6 +65,7 @@ program
 	)
 	.option("--markup <percent>", "Markup percentage", "10")
 	.option("--dry-run", "Preview without making API calls", false)
+	.option("--force", "Add even if model already exists on the Rate Card", false)
 	.action(async (opts) => {
 		await runAdd({
 			model: opts.model,
@@ -72,6 +73,7 @@ program
 			outputPrice: Number.parseFloat(opts.outputPrice),
 			markup: Number.parseFloat(opts.markup),
 			dryRun: opts.dryRun,
+			force: opts.force,
 		});
 	});
 
