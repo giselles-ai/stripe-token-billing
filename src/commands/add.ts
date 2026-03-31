@@ -48,7 +48,7 @@ async function createMeteredItemAndRate(
 			{ dimension: "token_type", value: tokenType },
 		],
 		unit_label: "token",
-		tax_details: { tax_code: "txcd_10000000" },
+		tax_details: { tax_code: "txcd_10103000" },
 		metadata: buildMeteredItemMetadata(),
 	});
 
@@ -86,7 +86,7 @@ function printDryRun(options: AddOptions) {
 		console.log(`      ${pc.dim("model =")} ${model}`);
 		console.log(`      ${pc.dim("token_type =")} ${tokenType}`);
 		console.log(`    ${pc.dim("unit_label:")} token`);
-		console.log(`    ${pc.dim("tax_code:")} txcd_10000000`);
+		console.log(`    ${pc.dim("tax_code:")} txcd_10103000`);
 		console.log("");
 		console.log(`  ${pc.bold("Rate:")}`);
 		console.log(`    ${pc.dim("unit_amount:")} ${unitAmount}`);
